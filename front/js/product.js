@@ -80,3 +80,79 @@ function createArticlePage(
     colorSelector.append(optionColor);
   }
 }
+
+// modal qui avertit l'utilisateur de l'ajout au panier et peux le rediriger vers la page panier
+const popupPanier = (name) => {
+  if (
+    window.confirm(
+      `Vous avez réservé ${document.getElementById("quantity").value} ${name} ${
+        document.getElementById("colors").value
+      } Pour consulter votre panier, cliquez sur OK`
+    )
+  ) {
+    window.location.href = "cart.html";
+  }
+};
+
+/**
+ * ajout ou update du panier (id et nom de l'article)
+ * @param { String } id
+ * @param { String } name
+ **/
+function gestionPanier(id, name) {
+  // Ajout de l'article demandé dans le panier
+  document.getElementById("addToCart").addEventListener("click", (event) => {
+    // Verrifier que la quantité et la couleur sont renseignées
+    if (
+      document.getElementById("quantity").value > 0 &&
+      document.getElementById("quantity").value <= 100 &&
+      document.getElementById("colors").value != ""
+    ) {
+      // récupération du localStorage actuel
+      let basket = JSON.parse(localStorage.getItem("kanapBasket"));
+
+      // Crée un objet Json comprenant les infos de l'article ciblé
+      let article = {
+        id: id,
+        quantity: document.getElementById("quantity").value,
+        colors: document.getElementById("colors").value,
+      };
+
+      // Si le panier récupéré (localStorage) contient un ou plusieurs articles
+      if (basket) {
+        console.log("Panier contenant du contenu, je verrifie");
+
+        // On cherche ici parmis les articles du panier récupérer si celui qu'on souhaite ajouter y figure déjà
+        const articlePresent = basket.find(
+          (el) => el.id === article.id && el.colors === article.colors
+        );
+
+        if (articlePresent) {
+          console.log(
+            "Produit trouvé, donc je n'ajoute pas, j'ajuste la quantité"
+          );
+          articlePresent.quantity =
+            parseInt(article.quantity) + parseInt(articlePresent.quantity);
+          localStorage.setItem("kanapBasket", JSON.stringify(basket));
+          popupPanier(name);
+        } else {
+          console.log("Produit non trouvé, donc j'ajoute");
+          basket.push(article);
+          localStorage.setItem("kanapBasket", JSON.stringify(basket));
+          popupPanier(name);
+        }
+      } else {
+        console.log("Panier vide, donc j'ajoute");
+        basket = [];
+        basket.push(article);
+        localStorage.setItem("kanapBasket", JSON.stringify(basket));
+        popupPanier(name);
+      }
+
+      console.log(basket);
+      console.log(localStorage);
+    } else {
+      alert("Vous devez renseigner le nombre d'articles et la couleur.");
+    }
+  });
+}
