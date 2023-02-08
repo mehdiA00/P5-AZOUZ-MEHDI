@@ -156,3 +156,5 @@ function gestionPanier(id, name) {
     }
   });
 }
+
+// localStorage.clear();
