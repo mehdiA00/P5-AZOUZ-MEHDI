@@ -236,3 +236,203 @@ function modifQtyArticle() {
     });
   }
 }
+// supression d'un article du panier
+function supprArticle() {
+  var deleteBtns = document.getElementsByClassName(
+    "cart__item__content__settings__delete"
+  );
+
+  for (let deleteBtn of deleteBtns) {
+    // Lors du clic sur le btn suppr => récup l'id de l'article en question
+    deleteBtn.addEventListener("click", function () {
+      var deleteId = deleteBtn.closest("article").dataset.id;
+
+      // Récupration du localStorage (panier)
+      let basket = JSON.parse(localStorage.getItem("kanapBasket"));
+
+      // Cherche la ligne contenant l'id recherché
+      for (let i = 0; i < basket.length; i++) {
+        if (basket[i].id == deleteId) {
+          console.log(
+            "je suppr l'article " + deleteId + " égal à " + basket[i].id
+          );
+          delete basket[i];
+        }
+      }
+
+      // delete supprime la ligne concernée mais laisse un ligne "empty/null". Il faut donc la suppr
+      var basketFilter = basket.filter(function (e) {
+        return e != null;
+      });
+      basket = basketFilter;
+
+      // ajoute le nouveau tableau dans le localStorage
+      localStorage.setItem("kanapBasket", JSON.stringify(basket));
+
+      // suppr l'article concerné du DOM
+      deleteBtn.closest("article").remove();
+
+      // actualise le total
+      totalArticle();
+    });
+  }
+}
+
+// Attendre l'ajout des el dans le DOM avant de récupérer la liste des btn suppr
+window.onload = function () {
+  modifQtyArticle();
+  supprArticle();
+};
+
+// vérrification des données saisis dans le formulaire
+function formTreatment() {
+  let form = document.querySelector(".cart__order__form");
+
+  // Expression régulière permettant de filtrer l'adresse e-mail
+  const RegExpText = /^[a-zA-Zàâäéèêëïîôöùûüç\-]+$/;
+  const RegExpAdress = /^[0-9]{1,3}(?:(?:[,. ]){1}[-a-zA-Zàâäéèêëïîôöùûüç]+)+/;
+  const RegExpEmail =
+    /^(([^<()[\]\\.,;:\s@\]+(\.[^<()[\]\\.,;:\s@\]+)*)|(.+))@(([[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}])|(([a-zA-Z-0-9]+.)+[a-zA-Z]{2,}))$/;
+
+  // Ces variables sont les flags de validation resepctifs de chaque entrée, on initialise ces valeurs à false
+  var firstNameValid = false;
+  var lastNameValid = false;
+  var addressValid = false;
+  var cityValid = false;
+  var emailValid = false;
+
+  // Écoute de la modification et verrification du prénom
+  form.firstName.addEventListener("change", function () {
+    if (form.firstName.value.match(RegExpText)) {
+      document.getElementById("firstNameErrorMsg").textContent = "";
+      firstNameValid = true;
+    } else {
+      document.getElementById("firstNameErrorMsg").textContent =
+        "Type de saisie incorrecte";
+      firstNameValid = false;
+    }
+  });
+
+  // Écoute de la modification et verrification du nom
+  form.lastName.addEventListener("change", function () {
+    if (form.lastName.value.match(RegExpText)) {
+      document.getElementById("lastNameErrorMsg").textContent = "";
+      lastNameValid = true;
+    } else {
+      document.getElementById("lastNameErrorMsg").textContent =
+        "Type de saisie incorrecte";
+      lastNameValid = false;
+    }
+  });
+
+  // Écoute de la modification et verrification de l'adresse
+  form.address.addEventListener("change", function () {
+    if (form.address.value.match(RegExpAdress)) {
+      document.getElementById("addressErrorMsg").textContent = "";
+      addressValid = true;
+    } else {
+      document.getElementById("addressErrorMsg").textContent =
+        "Type de saisie incorrecte";
+      addressValid = false;
+    }
+  });
+
+  // Écoute de la modification et verrification de la ville
+  form.city.addEventListener("change", function () {
+    if (form.city.value.match(RegExpText)) {
+      document.getElementById("cityErrorMsg").textContent = "";
+      cityValid = true;
+    } else {
+      document.getElementById("cityErrorMsg").textContent =
+        "Type de saisie incorrecte";
+      cityValid = false;
+    }
+  });
+
+  // Écoute de la modification et verrification de l'adresse e-mail
+  form.email.addEventListener("change", function () {
+    if (form.email.value.match(RegExpEmail)) {
+      document.getElementById("emailErrorMsg").textContent = "";
+      emailValid = true;
+    } else {
+      document.getElementById("emailErrorMsg").textContent =
+        "Type de saisie incorrecte";
+      emailValid = false;
+    }
+  });
+
+  // Pour finir, on verrifie que tout nos flags de verrification sont true
+  // Si oui, on déclenche l'envoi du formulaire
+  form.addEventListener("change", function () {
+    if (
+      firstNameValid == true &&
+      lastNameValid == true &&
+      addressValid == true &&
+      cityValid == true &&
+      emailValid == true
+    ) {
+      console.log("formulaire complet");
+      getForm();
+    } else {
+      console.log("formulaire incomplet");
+    }
+  });
+}
+formTreatment();
+
+// envoi du contact des ids produits vers l'API
+function getForm() {
+  document
+    .querySelector(".cart__order__form")
+    .addEventListener("submit", (e) => {
+      e.preventDefault();
+
+      // On récupère la liste des id produits du panier
+      // Récupration du localStorage (panier)
+      let basket = JSON.parse(localStorage.getItem("kanapBasket"));
+
+      // pour ne pas récupérer plusieurs fois l'id de l'article séléctionner plusieurs fois
+      let idBasket = [];
+      for (let article of basket) {
+        if (!idBasket.includes(article.id)) {
+          idBasket.push(article.id);
+        }
+      }
+
+      // On crée les objets contact et produits recquis pour l'envoi vers l'API
+      const order = {
+        contact: {
+          firstName: document.getElementById("firstName").value,
+          lastName: document.getElementById("lastName").value,
+          address: document.getElementById("address").value,
+          city: document.getElementById("city").value,
+          email: document.getElementById("email").value,
+        },
+        products: idBasket,
+      };
+
+      // à présent, on va envoyer notre objet contact et produits vers l'API
+
+      // défini les paramètres de notre requête
+      const options = {
+        method: "POST",
+        body: JSON.stringify(order),
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+      };
+
+      // requête envoyant l'objet contact et la liste des id produits. L'API renvoi en échange l'id de commande
+      fetch("http://localhost:3000/api/products/order", options)
+        .then((response) => response.json())
+        .then((data) => {
+          console.log(data);
+          // Une fois qu'on a notre id de commande, on redirige vers la page confirmation avec celui ci dans le lien
+          document.location.href = "confirmation.html?id=" + data.orderId;
+        })
+        .catch((err) => {
+          console.log("Problème avec fetch : " + err.message);
+        });
+    });
+}
