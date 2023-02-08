@@ -200,3 +200,39 @@ function totalArticle() {
   // modification du nombre d'articles du panier
   document.getElementById("totalQuantity").innerText = quantity;
 }
+totalArticle();
+
+// modification de la quantité d'un article
+function modifQtyArticle() {
+  var selectBtnsQty = document.getElementsByClassName("itemQuantity");
+  for (let selectBtnQty of selectBtnsQty) {
+    selectBtnQty.addEventListener("change", function () {
+      // Lors du changement de quantité => récup l'id de l'article en question
+      var modifQtyId = selectBtnQty.closest("article").dataset.id;
+      console.log(modifQtyId);
+
+      // Récupration du localStorage (panier)
+      let basket = JSON.parse(localStorage.getItem("kanapBasket"));
+
+      // Cherche la ligne contenant l'id recherché
+      for (let i = 0; i < basket.length; i++) {
+        if (basket[i].id == modifQtyId) {
+          console.log(
+            "je modifie la quantité de l'article n° " +
+              modifQtyId +
+              " égal à " +
+              basket[i].id
+          );
+        }
+      }
+
+      // ajoute le nouveau tableau dans le localStorage
+      localStorage.setItem("kanapBasket", JSON.stringify(basket));
+
+      console.log(localStorage);
+
+      // actualise le total
+      totalArticle();
+    });
+  }
+}
